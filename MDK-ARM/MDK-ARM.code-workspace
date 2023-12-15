@@ -6,13 +6,10 @@
     ],
     "settings": {
         "files.associations": {
-            "chassis_task.h": "c",
-            "shoot_task.h": "c",
-            "gimbal_task.h": "c",
-            "struct_typedef.h": "c",
-            "main.h": "c",
-            "pid.h": "c",
             "rc_potocal.h": "c",
+            "ins_task.h": "c",
+            "gimbal_task.h": "c",
+            "shoot_task.h": "c",
             "pitch_task.h": "c"
         }
     },

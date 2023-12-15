@@ -6,12 +6,10 @@
 
 typedef struct
 {
-    pid_struct_t pid_angle;      // 云台电机angle的pid结构体
-    pid_struct_t pid_speed;      // 云台电机speed的pid结构体
-    fp32 pid_angle_value[3];     // 云台电机angle的pid参数
-    fp32 pid_speed_value[3];     // 云台电机speed的pid参数
-    fp32 target_angle;           // 云台电机的目标角度
-    fp32 target_speed;           // 云台电机的目标速度
+    pid_struct_t pid;            // speed的pid结构体
+    fp32 pid_value[3];           // speed的pid参数
+    fp32 target_speed;           // 目标速度
+    fp32 speed_max;              // 最大速度
 } pitch_t;
 
 
@@ -26,7 +24,7 @@ void pitch_can1_cmd(int16_t v3);
 // PID计算速度并发送电流
 void pitch_current_give();
 
-// pitch角度限制
-void pitch_angle_limit(int16_t angle, int16_t angle1, int16_t angle2);
+// pitch速度映射
+int16_t pitch_speed_map(int value, int from_min, int from_max, int to_min, int to_max);
 
 #endif

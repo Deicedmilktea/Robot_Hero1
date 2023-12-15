@@ -1,3 +1,11 @@
+/*
+*************Chassis_task底盘任务**************
+采用3508，ID = 1234
+遥控器控制：左拨杆上下→前后
+           左拨杆左右→左右
+           左滑轮→旋转
+*/
+
 #include "Chassis_task.h"
 #include "cmsis_os.h"
 #include "INS_task.h"
@@ -5,7 +13,7 @@
 #include "drv_can.h"
 pid_struct_t motor_pid_chassis[4];
 pid_struct_t supercap_pid;
-motor_info_t  motor_can1[8];       //can1电机信息结构体, 1234：底盘，5：云台
+motor_info_t  motor_can1[6];       //can1电机信息结构体, 0123：底盘，4：拨盘, 5: 云台
 fp32 chassis_motor_pid [3]={30,0.5,10};   //用的原来的pid
 fp32 superpid[3] = {120,0.1,0};
 volatile int16_t Vx=0,Vy=0,Wz=0;
@@ -26,6 +34,7 @@ double rx=0.2,ry=0.2;
 
 int16_t chassis_mode = 1;//判断底盘状态，用于UI编写
 int16_t shot_mode = 0;
+int16_t chassis_speed_max = 3000;
 
 //获取imu——Yaw角度差值参数
 static void Get_Err(); 
@@ -37,8 +46,6 @@ static void Chassis_loop_Init();
 void power_limit(int *speed);
 
 int chassis_mode_flag =0;
-
-void qe();
 
 //speed mapping
 int16_t Speedmapping(int value, int from_min, int from_max, int to_min, int to_max){
@@ -52,18 +59,18 @@ int16_t Speedmapping(int value, int from_min, int from_max, int to_min, int to_m
 }
 
 void Calculate_speed(){
-	Vx=Speedmapping(rc_ctrl.rc.ch[2],-660,660,-1000,1000);// left and right
-	Vy=Speedmapping(rc_ctrl.rc.ch[3],-660,660,-1000,1000);// front and back
-	Wz=Speedmapping(rc_ctrl.rc.ch[4],-660,660,-1000,1000);// rotate      
+	Vx=Speedmapping(rc_ctrl.rc.ch[2],-660,660,-chassis_speed_max,chassis_speed_max);// left and right
+	Vy=Speedmapping(rc_ctrl.rc.ch[3],-660,660,-chassis_speed_max,chassis_speed_max);// front and back
+	Wz=Speedmapping(rc_ctrl.rc.ch[4],-660,660,-chassis_speed_max,chassis_speed_max);// rotate      
 }
 
 void RC_move(){
-		motor_speed_target[CHAS_LF] =  Vy + Vx + 3*Wz*(rx+ry);
-    motor_speed_target[CHAS_RF] = -Vy + Vx + 3*Wz*(rx+ry);
-    // motor_speed_target[CHAS_RB] = -Vy - Vx + 3*Wz*(rx+ry);
-    // motor_speed_target[CHAS_LB] =  Vy - Vx + 3*Wz*(rx+ry);
-    motor_speed_target[CHAS_RB] =  Vy - Vx + 3*Wz*(rx+ry);
-    motor_speed_target[CHAS_LB] = -Vy - Vx + 3*Wz*(rx+ry); // 五号换位置
+		motor_speed_target[CHAS_LF] =  Vy + Vx - 3*Wz*(rx+ry);
+    motor_speed_target[CHAS_RF] = -Vy + Vx - 3*Wz*(rx+ry);
+    motor_speed_target[CHAS_RB] = -Vy - Vx - 3*Wz*(rx+ry);
+    motor_speed_target[CHAS_LB] =  Vy - Vx - 3*Wz*(rx+ry);
+    // motor_speed_target[CHAS_RB] =  Vy - Vx + 3*Wz*(rx+ry);
+    // motor_speed_target[CHAS_LB] = -Vy - Vx + 3*Wz*(rx+ry); // 五号换位置
 }
 	
 #define angle_valve 5

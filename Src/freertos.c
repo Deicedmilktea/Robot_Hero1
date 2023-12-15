@@ -142,19 +142,19 @@ void MX_FREERTOS_Init(void) {
   INSTaskHandle = osThreadCreate(osThread(INSTask), NULL);
 
   /* definition and creation of ChassisTask */
-  osThreadDef(ChassisTask, Chassis_task, osPriorityIdle, 0, 256);
+  osThreadDef(ChassisTask, Chassis_task, osPriorityHigh, 0, 256);
   ChassisTaskHandle = osThreadCreate(osThread(ChassisTask), NULL);
 
   /* definition and creation of GimbalTask */
-  osThreadDef(GimbalTask, Gimbal_task, osPriorityIdle, 0, 256);
+  osThreadDef(GimbalTask, Gimbal_task, osPriorityRealtime, 0, 256);
   GimbalTaskHandle = osThreadCreate(osThread(GimbalTask), NULL);
 
   /* definition and creation of ShootTask */
-  osThreadDef(ShootTask, Shoot_task, osPriorityIdle, 0, 128);
+  osThreadDef(ShootTask, Shoot_task, osPriorityNormal, 0, 128);
   ShootTaskHandle = osThreadCreate(osThread(ShootTask), NULL);
 
   /* definition and creation of PitchTask */
-  osThreadDef(PitchTask, Pitch_task, osPriorityIdle, 0, 128);
+  osThreadDef(PitchTask, Pitch_task, osPriorityNormal, 0, 128);
   PitchTaskHandle = osThreadCreate(osThread(PitchTask), NULL);
 
   /* USER CODE BEGIN RTOS_THREADS */

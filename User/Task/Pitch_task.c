@@ -1,25 +1,24 @@
 /*
 *************pitch轴任务**************
-采用3508，ID = 7，CAN2，motor_can2[4]
-使用遥控右拨杆的上下控制
+采用3508，ID = 5，CAN2，motor_can2[0]
+遥控器控制：右拨杆上下
 */
+
 #include "Pitch_task.h"
 #include "Chassis_task.h"
 #include "cmsis_os.h"
 
-extern motor_info_t motor_can2[5];
+extern motor_info_t motor_can2[4];
 extern RC_ctrl_t rc_ctrl;
 pitch_t pitch;
 
 void Pitch_task(void const * argument)
 {
     pitch_loop_init();
-    pitch.target_angle = motor_can2[4].rotor_angle;
 
     for(;;)
     {
-        pitch.target_angle += rc_ctrl.rc.ch[1]/300;
-        pitch_angle_limit(pitch.target_angle, 1600, 3400); //根据实际修改
+        pitch.target_speed = pitch_speed_map(rc_ctrl.rc.ch[1], -660, 660, -pitch.speed_max, pitch.speed_max);
 		pitch_current_give();
         osDelay(1);
     }
@@ -28,19 +27,14 @@ void Pitch_task(void const * argument)
 /****************初始化****************/
 void pitch_loop_init()
 {
-    pitch.pid_angle_value[0] = 10;
-    pitch.pid_angle_value[1] = 0;
-    pitch.pid_angle_value[2] = 0;
+    pitch.pid_value[0] = 10;
+    pitch.pid_value[1] = 0;
+    pitch.pid_value[2] = 0;
 
-    pitch.pid_speed_value[0] = 5;
-    pitch.pid_speed_value[1] = 0;
-    pitch.pid_speed_value[2] = 0;
-
-    pitch.target_angle = 0;
     pitch.target_speed = 0;
+    pitch.speed_max = 3000;
 
-    pid_init(&pitch.pid_angle, pitch.pid_angle_value, 100, 3500);
-    pid_init(&pitch.pid_speed, pitch.pid_speed_value, 100, 5000);
+    pid_init(&pitch.pid, pitch.pid_value, 100, pitch.speed_max);
 }
 
 /********************************can1发送电流***************************/
@@ -50,7 +44,7 @@ void pitch_can2_cmd(int16_t v3)
   CAN_TxHeaderTypeDef tx_header;
   uint8_t             tx_data[8];
     
-  tx_header.StdId = 0x2FF;
+  tx_header.StdId = 0x1FF;
   tx_header.IDE   = CAN_ID_STD;//标准帧
   tx_header.RTR   = CAN_RTR_DATA;//数据帧
 	
@@ -71,20 +65,18 @@ void pitch_can2_cmd(int16_t v3)
 /****************PID计算速度并发送电流***************/
 void pitch_current_give()
 {
-    pitch.target_speed = pid_calc(&pitch.pid_angle, pitch.target_angle, motor_can2[4].rotor_angle);
-    motor_can2[4].set_current = pid_calc(&pitch.pid_speed, pitch.target_speed, motor_can2[4].rotor_speed);
-    pitch_can2_cmd(motor_can2[4].set_current);
+    motor_can2[2].set_current = pid_calc(&pitch.pid, pitch.target_speed, motor_can2[2].rotor_speed);
+    pitch_can2_cmd(motor_can2[2].set_current);
 }
 
-/*************pitch角度限制********************/
-void pitch_angle_limit(int16_t angle, int16_t angle1, int16_t angle2)
+/*************pitch速度映射********************/
+int16_t pitch_speed_map(int value, int from_min, int from_max, int to_min, int to_max)
 {
-   if (angle < angle1)
-   {
-       angle = angle1;
-   }
-   else if (angle > angle2)
-   {
-       angle = angle2;
-   }
+    // 首先将输入值从 [a, b] 映射到 [0, 1] 范围内
+    double normalized_value = (value*1.0 - from_min) / (from_max - from_min);
+    
+    // 然后将标准化后的值映射到 [C, D] 范围内
+    int16_t mapped_value = (int16_t)(to_min + (to_max - to_min) * normalized_value);
+    
+    return mapped_value;
 }

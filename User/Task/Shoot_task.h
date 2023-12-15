@@ -23,7 +23,7 @@ void shoot_start();
 void shoot_stop();
 
 // can2发送电流
-void shoot_can2_cmd(int16_t v1, int16_t v2, int16_t v3, int16_t v4);
+void shoot_can2_cmd(int16_t v2, int16_t v3);
 
 //PID计算速度并发送电流
 void shoot_current_give();
